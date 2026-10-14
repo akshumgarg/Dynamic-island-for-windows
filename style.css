@@ -1,0 +1,318 @@
+:root { --spring: cubic-bezier(.34,1.3,.64,1); --smooth: cubic-bezier(.4,0,.2,1);
+  --accent: #4cc3ff; --green: #1ed760; --orange: #ff9f0a;
+  --tint: #1ed760;                       /* music page: changes to the colour of the song picture */
+  --sky: rgba(76,195,255,.16); }         /* weather page: changes with the weather */
+
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
+font-family: "Segoe UI", sans-serif; color: #fff; user-select: none; }
+button { font-family: inherit; color: #fff; }
+
+/* ================= The black island =================
+It is one shape that changes size:
+hidden = thin line, pill = small, open = big card */
+#island {
+position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+width: 110px; height: 5px; background: #000;
+border-radius: 0 0 5px 5px;
+box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+will-change: width, height;
+transition: width .35s var(--smooth), height .35s var(--smooth), top .35s var(--smooth),
+        border-radius .35s var(--smooth), box-shadow .35s;
+}
+body.playing[data-mode="hidden"] #island { box-shadow: inset 0 -2px 0 var(--green); }  /* green line = music playing */
+
+body[data-mode="pill"] #island {
+width: var(--pillW, 190px); height: 38px; border-radius: 0 0 22px 22px;   /* stuck to the top edge */
+box-shadow: 0 8px 24px rgba(0,0,0,.45);
+transition: width .5s var(--spring), height .5s var(--spring), top .5s var(--spring),
+        border-radius .5s var(--spring), box-shadow .4s;
+}
+body[data-mode="open"] #island {
+width: 440px; height: 200px; top: 10px; border-radius: 36px;               /* comes out and floats */
+box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08);
+transition: width .5s var(--spring), height .5s var(--spring), top .5s var(--spring),
+        border-radius .5s var(--spring), box-shadow .4s;
+}
+body.ring[data-mode="pill"] #island {                                         /* orange line while ringing */
+box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 -2px 0 var(--orange);
+cursor: pointer;
+}
+
+/* The clip box cuts everything inside to the island's rounded shape */
+#clip { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+
+/* The two curves where the small island meets the top edge of the screen.
+Each one is a small black square with a round bite taken out of its lower corner. */
+.ear { position: absolute; top: 0; width: 12px; height: 12px; opacity: 0; pointer-events: none;
+transition: opacity .15s; }
+.ear.left  { left: -12px;  background: radial-gradient(circle at 0 100%,    transparent 11.5px, #000 12px); }
+.ear.right { right: -12px; background: radial-gradient(circle at 100% 100%, transparent 11.5px, #000 12px); }
+body[data-mode="pill"] .ear { opacity: 1; transition-delay: .1s; }
+
+/* Two layers inside: the small pill and the big card. Only one is visible */
+.layer { position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+opacity: 0; pointer-events: none; transition: opacity .2s; }
+body[data-mode="pill"] #pillLayer { opacity: 1; transition-delay: .12s; }
+body[data-mode="open"] #pagesLayer { opacity: 1; pointer-events: auto; transition-delay: .15s; }
+
+/* ================= Small pill =================
+Its width is measured by app.js, so the island grows or shrinks with what is inside */
+#pillLayer { width: max-content; height: 38px; padding: 0 24px; display: flex; align-items: center;
+font-size: 14px; font-weight: 600; white-space: nowrap; }
+#pillMain, #pillHud, #pillRing { display: flex; align-items: center; gap: 18px; }
+#pillTime { font-size: 15px; letter-spacing: .1px; }
+#pillHud, #pillRing { display: none; }
+body.hud #pillMain { display: none; }
+body.hud #pillHud { display: flex; }
+
+#pillWeather { font-weight: 500; color: #e4e4ea; }
+#pillWeather:empty { display: none; }
+
+/* Battery in the pill. White normally, green with a bolt while charging, red when low */
+.pillBatt { display: flex; align-items: center; gap: 6px; font-weight: 500; color: #e4e4ea; }
+#pillBattery { width: 26px; height: 13px; flex-shrink: 0; }
+.pbFill { fill: #fff; transition: width .4s; }
+#pillBattery.charging .pbFill { fill: #30d158; }
+#pillBattery.low .pbFill { fill: #ff453a; }
+#pillBolt { display: none; }
+#pillBattery.charging #pillBolt { display: block; }
+#pillBattText { font-variant-numeric: tabular-nums; }
+
+/* Volume / brightness shown inside the pill for a moment */
+#hudIcon { font-size: 15px; }
+.hudBar { width: 90px; height: 5px; background: rgba(255,255,255,.2); border-radius: 3px; overflow: hidden; }
+#hudFill { height: 100%; width: 0%; border-radius: 3px; transition: width .15s; }
+#hudNum { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Timer or alarm ringing. This comes after the rules above, so it wins */
+body.ring #pillMain, body.ring #pillHud { display: none; }
+body.ring #pillRing { display: flex; gap: 9px; }
+#ringIcon { display: inline-block; font-size: 16px; transform-origin: 50% 15%; animation: shake .5s ease-in-out infinite; }
+#ringHint { font-size: 11px; font-weight: 600; color: var(--orange); }
+@keyframes shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-16deg); } 75% { transform: rotate(16deg); } }
+
+/* Dancing music bars (always green). They show only while music plays */
+.eq { display: none; align-items: center; gap: 3px; height: 14px; }
+body.playing .eq { display: flex; }
+.eq span { width: 3px; height: 100%; background: var(--green); border-radius: 2px;
+animation: bounce .9s ease-in-out infinite; }
+.eq span:nth-child(2) { animation-delay: .15s; }
+.eq span:nth-child(3) { animation-delay: .3s; }
+.eq span:nth-child(4) { animation-delay: .45s; }
+.eq.big { height: 24px; }
+@keyframes bounce { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
+
+/* ================= Big card and its pages ================= */
+#pagesLayer { width: 440px; height: 200px; overflow: hidden; }
+.page { position: absolute; left: 0; top: 0; width: 440px; height: 200px; box-sizing: border-box;
+padding: 16px 44px 0 24px; overflow: hidden;
+transition: transform .5s cubic-bezier(.22,1,.36,1), opacity .3s; }
+
+/* Page dots on the right */
+#dots { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+display: flex; flex-direction: column; }
+#dots i { width: 6px; height: 6px; padding: 3px; border-radius: 50%; cursor: pointer;
+background-color: #555; background-clip: content-box; transition: background-color .2s; }
+#dots i.on { background-color: #fff; }
+
+/* ---- Music page (colours come from the song picture) ---- */
+#glow { position: absolute; inset: -40px; filter: blur(30px) saturate(1.6); opacity: .4;
+background: linear-gradient(135deg, #7f5af0, #ff6b9a) center / cover; }
+#pageMusic > *:not(#glow) { position: relative; }
+.musicTop { display: flex; align-items: center; gap: 14px; height: 80px; }
+#art { width: 76px; height: 76px; border-radius: 16px; flex-shrink: 0; font-size: 30px;
+display: flex; align-items: center; justify-content: center;
+background: linear-gradient(135deg, #7f5af0, #ff6b9a) center / cover;
+box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+#art.has span { display: none; }
+.meta { flex: 1; min-width: 0; }
+#title { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#artist { font-size: 13px; color: #c4c4c4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+#source { font-size: 11px; color: #a8a8a8; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#source:empty { display: none; }
+#source::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+background: var(--tint); margin-right: 6px; }
+
+/* Song slider: you can drag it */
+.progress { display: flex; align-items: center; gap: 10px; margin-top: 12px;
+font-size: 11px; color: #c4c4c4; font-variant-numeric: tabular-nums; }
+.progress span { width: 36px; }
+#remaining { text-align: right; }
+.bar { position: relative; flex: 1; height: 18px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.track { width: 100%; height: 5px; background: rgba(255,255,255,.22); border-radius: 3px; overflow: hidden; transition: height .15s; }
+.bar:hover .track, .bar.dragging .track { height: 8px; }
+#fill { width: 0%; height: 100%; background: var(--tint); border-radius: 3px; transition: width 1s linear; }
+#knob { position: absolute; top: 50%; left: 0%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px;
+border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+transform: scale(0); transition: transform .15s, left 1s linear; }
+.bar:hover #knob, .bar.dragging #knob { transform: scale(1); }
+.bar.dragging #fill, .bar.dragging #knob, .bar.instant #fill, .bar.instant #knob { transition: none; }
+.bar.dragging #knob { transform: scale(1.2); }
+
+.controls { display: flex; align-items: center; justify-content: center; gap: 34px; margin-top: 4px; }
+.controls button { background: none; border: none; padding: 6px; border-radius: 50%; cursor: pointer;
+display: flex; transition: transform .15s, background .15s; }
+.controls button:hover { background: rgba(255,255,255,.12); }
+.controls button:active { transform: scale(.88); }
+.controls svg { width: 26px; height: 26px; fill: #fff; display: block; }
+#play { background: #fff; padding: 9px; }
+#play:hover { background: #e6e6e6; }
+#play svg { fill: #000; }
+#play .iconPause { display: none; }                       /* play and pause icons are both inside the button, */
+body.playing #play .iconPlay { display: none; }           /* we only show one with CSS. (The button itself never changes) */
+body.playing #play .iconPause { display: block; }
+
+/* ---- Page 2: time, battery, Wi-Fi, Bluetooth, brightness, volume ---- */
+#pageHome { padding-top: 14px; background: radial-gradient(circle at 6% 0%, rgba(124,92,255,.13), transparent 55%); }
+.topRow { display: flex; align-items: center; justify-content: space-between; height: 44px; }
+#homeTime { font-size: 28px; font-weight: 600; letter-spacing: -.5px; }
+#homeAmpm { font-size: 12px; color: #9a9aa8; margin-left: 4px; }
+#homeDate { font-size: 12px; color: #9a9aa8; }
+.battbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #cfcfcf; }
+.battery { position: relative; width: 24px; height: 10px; padding: 1.5px; border: 1.5px solid #777; border-radius: 5px; }
+.battery::after { content: ""; position: absolute; right: -5px; top: 3px; width: 2px; height: 6px;
+background: #777; border-radius: 0 2px 2px 0; }
+.battery i { display: block; height: 100%; width: 50%; background: #fff; border-radius: 3px; transition: width .4s; }
+.battery.charging i { background: var(--green); }
+.battery.low i { background: #ff453a; }
+
+.tiles { display: flex; gap: 12px; margin-top: 8px; }
+.qtile { flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 10px;
+background: rgba(255,255,255,.07); border-radius: 14px; display: flex; align-items: center; gap: 9px; }
+.qtile { cursor: pointer; transition: background .15s, transform .15s; }
+.qtile:hover { background: rgba(255,255,255,.11); }
+.qtile:active { transform: scale(.97); }
+.qtile.off .qicon { background: rgba(255,255,255,.1); color: #8a8a8a; }   /* radio is off */
+.qicon { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; color: var(--accent);
+background: rgba(76,195,255,.18); display: flex; align-items: center; justify-content: center; }
+.qicon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2;
+stroke-linecap: round; stroke-linejoin: round; }
+.qicon svg circle { fill: currentColor; }
+.qtext { min-width: 0; line-height: 1.25; }
+.qtext b { display: block; font-size: 12px; }
+.qtext span { display: block; font-size: 11px; color: #9a9aa8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sliderRow { display: flex; align-items: center; gap: 10px; margin-top: 8px; height: 20px; font-size: 13px; }
+.sliderRow .ico { width: 22px; text-align: center; cursor: pointer; }
+.sliderRow em { width: 28px; text-align: right; font-style: normal; font-size: 11px; color: #9a9aa8;
+font-variant-numeric: tabular-nums; }
+.sbar { position: relative; flex: 1; height: 20px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.sbar.off { opacity: .35; pointer-events: none; }
+.strack { width: 100%; height: 6px; background: rgba(255,255,255,.14); border-radius: 3px; overflow: hidden; }
+.sfill { height: 100%; width: 0%; border-radius: 3px; transition: width .2s; }
+#brightFill { background: #ffc233; }
+#volFill { background: var(--accent); }
+.sknob { position: absolute; top: 50%; left: 0%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5); transition: left .2s; }
+.sbar.dragging .sfill, .sbar.dragging .sknob { transition: none; }
+
+/* ---- Timer, stopwatch and alarm page ---- */
+#pageTimer { padding-top: 14px; background: radial-gradient(circle at 6% 0%, rgba(255,159,10,.13), transparent 55%); }
+.tabs { display: flex; gap: 6px; height: 28px; margin-bottom: 8px; }
+.tabs button { flex: 1; border: none; border-radius: 14px; background: rgba(255,255,255,.07);
+font-size: 12px; font-weight: 600; color: #a8a8b0; cursor: pointer; transition: background .2s, color .2s; }
+.tabs button.on { background: rgba(255,159,10,.22); color: #ffb340; }
+.tab { display: none; }
+.tab.on { display: block; }
+
+button.main { border: none; border-radius: 16px; background: var(--orange); color: #000;
+font-size: 13px; font-weight: 700; padding: 0 22px; height: 32px; cursor: pointer; transition: transform .15s, opacity .15s; }
+.btnRow button:not(.main) { border: none; border-radius: 16px; background: rgba(255,255,255,.1);
+font-size: 13px; padding: 0 20px; height: 32px; cursor: pointer; transition: transform .15s, background .15s; }
+.btnRow button:not(.main):hover { background: rgba(255,255,255,.18); }
+button.main:active, .btnRow button:active { transform: scale(.94); }
+button.main:hover { opacity: .9; }
+.btnRow { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
+
+/* Timer */
+.timerRow { display: flex; align-items: center; justify-content: center; gap: 18px; height: 52px; }
+#timerTime { min-width: 150px; text-align: center; font-size: 44px; font-weight: 600;
+font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+.round { width: 30px; height: 30px; border: none; border-radius: 50%; background: rgba(255,255,255,.1);
+font-size: 18px; line-height: 1; cursor: pointer; transition: transform .15s, background .15s, opacity .2s; }
+.round:hover { background: rgba(255,255,255,.18); }
+.round:active { transform: scale(.88); }
+.chips { display: flex; justify-content: center; gap: 8px; height: 26px; margin-top: 6px; }
+.chips button { border: none; border-radius: 13px; background: rgba(255,255,255,.08);
+font-size: 12px; padding: 0 12px; cursor: pointer; transition: background .15s; }
+.chips button:hover { background: rgba(255,159,10,.25); }
+.timerBar { display: none; height: 5px; margin: 17px 40px 4px; border-radius: 3px;
+background: rgba(255,255,255,.14); overflow: hidden; }
+#timerFill { width: 100%; height: 100%; background: var(--orange); border-radius: 3px; }
+#tabTimer.started .chips { display: none; }
+#tabTimer.started .timerBar { display: block; }
+#tabTimer.started .round { opacity: .25; pointer-events: none; }
+
+/* Stopwatch */
+#swTime { height: 84px; line-height: 84px; text-align: center; font-size: 48px; font-weight: 600;
+font-variant-numeric: tabular-nums; letter-spacing: -1px; transition: color .2s; }
+#swTime.running { color: #ffb340; }
+
+/* Alarm */
+#tabAlarm.on { display: flex; gap: 14px; }
+.alarmLeft { width: 132px; flex-shrink: 0; }
+.picker { display: flex; align-items: center; justify-content: center; gap: 1px; }
+.col { display: flex; flex-direction: column; align-items: center; }
+.col button { width: 38px; height: 20px; border: none; background: none; color: #8a8a92; font-size: 10px; cursor: pointer; }
+.col button:hover { color: var(--orange); }
+.col div { width: 38px; text-align: center; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.colon { font-size: 24px; font-weight: 600; margin-top: -2px; }
+#alarmAdd { width: 100%; margin-top: 6px; padding: 0; }
+#alarmAdd.off { opacity: .35; pointer-events: none; }
+#alarmList { flex: 1; min-width: 0; }
+.alarmRow { display: flex; align-items: center; gap: 8px; height: 34px; margin-bottom: 6px; padding: 0 8px 0 12px;
+background: rgba(255,255,255,.07); border-radius: 12px; }
+.alText { flex: 1; min-width: 0; line-height: 1.15; }
+.alText b { display: block; font-size: 15px; }
+.alText small { font-size: 10px; color: #8a8a92; }
+.sw { position: relative; width: 34px; height: 20px; border-radius: 10px; background: #555; cursor: pointer; transition: background .2s; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+background: #fff; transition: left .2s; pointer-events: none; }
+.sw.on { background: #30d158; }
+.sw.on::after { left: 16px; }
+.del { width: 22px; height: 22px; border: none; border-radius: 50%; background: none; color: #8a8a92; font-size: 16px; line-height: 1; cursor: pointer; }
+.del:hover { background: rgba(255,255,255,.12); color: #fff; }
+.emptyAlarm { color: #8a8a92; font-size: 12px; text-align: center; margin-top: 34px; }
+
+/* ---- Calendar page ---- */
+#pageCalendar { display: flex; gap: 14px; padding: 14px 44px 0 20px;
+background: radial-gradient(circle at 6% 0%, rgba(76,195,255,.13), transparent 55%); }
+.dateTile { width: 118px; height: 172px; box-sizing: border-box; flex-shrink: 0;
+background: rgba(255,255,255,.07); border: 1px solid rgba(76,195,255,.18);
+border-radius: 20px; padding: 12px 14px;
+display: flex; flex-direction: column; justify-content: space-between; }
+#tileMonth { color: var(--accent); font-weight: 700; font-size: 15px; }
+#tileYear { color: #9aa6b4; font-size: 12px; }
+#tileDay { font-size: 60px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+#tileWeekday { color: #9aa6b4; font-weight: 600; font-size: 14px; }
+.calMain { flex: 1; min-width: 0; }
+.calHead { display: flex; align-items: center; justify-content: space-between; height: 24px;
+margin-bottom: 4px; font-size: 13px; font-weight: 700; }
+.calHead button { width: 24px; height: 24px; border: none; border-radius: 50%; cursor: pointer;
+background: rgba(255,255,255,.1); font-size: 16px; line-height: 1; transition: transform .15s, background .15s; }
+.calHead button:hover { background: rgba(255,255,255,.2); }
+.calHead button:active { transform: scale(.85); }
+.week, .days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+.week div { font-size: 11px; color: #8a96a4; height: 16px; line-height: 16px; font-weight: 600; }
+#calWrap { position: relative; height: 132px; overflow: hidden; }   /* months slide inside this box */
+.days { position: absolute; inset: 0; grid-template-rows: repeat(6, 22px);
+transition: transform .45s cubic-bezier(.22,1,.36,1); }
+.days div { width: 22px; height: 22px; line-height: 22px; margin: 0 auto; border-radius: 50%;
+font-size: 13px; font-weight: 600; }
+.days .weekend { color: #7a8794; }
+.days .today { background: var(--accent); color: #fff; }
+
+/* ---- Weather page ---- */
+#pageWeather { padding-top: 0; display: flex; align-items: center; justify-content: space-between;
+background: radial-gradient(circle at 10% 0%, var(--sky), transparent 60%); }
+.wLeft { min-width: 0; }
+#wCity { font-size: 13px; color: #b0b8c4; }
+.wMain { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+#wIcon { font-size: 42px; }
+#wTemp { font-size: 54px; font-weight: 700; letter-spacing: -2px; }
+#wText { font-size: 17px; font-weight: 600; }
+.wRight { display: flex; flex-direction: column; gap: 8px; width: 156px; box-sizing: border-box;
+padding-left: 16px; border-left: 1px solid rgba(255,255,255,.12); flex-shrink: 0; }
+.tile { background: rgba(255,255,255,.07); border-radius: 14px; padding: 8px 12px; }
+.tile small { display: block; font-size: 12px; color: #b0b8c4; }
+.tile b { font-size: 15px; }

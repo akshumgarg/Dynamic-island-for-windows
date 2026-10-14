@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-mode="hidden">
+  <div id="island">
+    <div id="clip">
+
+    <!-- Small pill: shown when the mouse is on the top edge -->
+    <div class="layer" id="pillLayer">
+      <div id="pillMain">
+        <span id="pillTime"></span>
+        <span id="pillWeather"></span>
+        <div class="pillBatt">
+          <svg id="pillBattery" viewBox="0 0 28 14">
+            <rect x="1" y="1" width="23" height="12" rx="3.5" fill="none" stroke="#9a9a9a" stroke-width="1.2"/>
+            <rect x="25" y="4.5" width="2" height="5" rx="1" fill="#9a9a9a"/>
+            <rect id="pillBattFill" class="pbFill" x="2.6" y="2.6" width="10" height="8.8" rx="2"/>
+            <path id="pillBolt" d="M14 2.2 L9.5 7.6 H12 L11 11.8 L15.5 6.2 H13 Z" fill="#fff" stroke="#000" stroke-width=".5" stroke-linejoin="round"/>
+          </svg>
+          <span id="pillBattText"></span>
+        </div>
+        <div class="eq"><span></span><span></span><span></span><span></span></div>
+      </div>
+      <!-- Shown for a moment when the volume or brightness changes -->
+      <div id="pillHud">
+        <span id="hudIcon"></span>
+        <div class="hudBar"><div id="hudFill"></div></div>
+        <span id="hudNum"></span>
+      </div>
+      <!-- Shown when a timer or an alarm rings. It stays until you click it -->
+      <div id="pillRing">
+        <span id="ringIcon"></span>
+        <span id="ringText"></span>
+        <span id="ringHint">tap to stop</span>
+      </div>
+    </div>
+
+    <!-- Big card: shown after you click the pill. It has pages you scroll through -->
+    <div class="layer" id="pagesLayer">
+
+      <div class="page" id="pageMusic">
+        <div id="glow"></div>
+        <div class="musicTop">
+          <div id="art"><span>♪</span></div>
+          <div class="meta">
+            <div id="title"></div>
+            <div id="artist"></div>
+            <div id="source"></div>
+          </div>
+          <div class="eq big"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="progress">
+          <span id="elapsed">0:00</span>
+          <div class="bar" id="bar">
+            <div class="track"><div id="fill"></div></div>
+            <div id="knob"></div>
+          </div>
+          <span id="remaining">-0:00</span>
+        </div>
+        <div class="controls">
+          <button id="prev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9.5 12 18 6v12z"/></svg></button>
+          <button id="play">
+            <svg class="iconPlay" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="iconPause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+          </button>
+          <button id="next"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/></svg></button>
+        </div>
+      </div>
+
+      <!-- Page 2: time, battery, Wi-Fi, Bluetooth, brightness, volume -->
+      <div class="page" id="pageHome">
+        <div class="topRow">
+          <div>
+            <div><span id="homeTime"></span><span id="homeAmpm"></span></div>
+            <div id="homeDate"></div>
+          </div>
+          <div class="battbox">
+            <div class="battery" id="battery"><i id="battFill"></i></div>
+            <span id="battText"></span>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="qtile" id="wifiTile" title="Click to turn Wi-Fi on or off">
+            <div class="qicon"><svg viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg></div>
+            <div class="qtext"><b>Wi-Fi</b><span id="wifiName">--</span></div>
+          </div>
+          <div class="qtile" id="btTile" title="Click to turn Bluetooth on or off">
+            <div class="qicon"><svg viewBox="0 0 24 24"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg></div>
+            <div class="qtext"><b>Bluetooth</b><span id="btName">--</span></div>
+          </div>
+        </div>
+        <div class="sliderRow">
+          <span class="ico">☀️</span>
+          <div class="sbar" id="brightBar"><div class="strack"><div class="sfill" id="brightFill"></div></div><div class="sknob" id="brightKnob"></div></div>
+          <em id="brightNum">--</em>
+        </div>
+        <div class="sliderRow">
+          <span class="ico" id="volIcon">🔊</span>
+          <div class="sbar" id="volBar"><div class="strack"><div class="sfill" id="volFill"></div></div><div class="sknob" id="volKnob"></div></div>
+          <em id="volNum">--</em>
+        </div>
+      </div>
+
+      <!-- Timer, stopwatch and alarm -->
+      <div class="page" id="pageTimer">
+        <div class="tabs" id="tabs">
+          <button data-tab="timer" class="on">Timer</button>
+          <button data-tab="stopwatch">Stopwatch</button>
+          <button data-tab="alarm">Alarm</button>
+        </div>
+
+        <div class="tab on" id="tabTimer">
+          <div class="timerRow">
+            <button class="round" id="timerMinus">−</button>
+            <div id="timerTime">05:00</div>
+            <button class="round" id="timerPlus">+</button>
+          </div>
+          <div class="chips" id="timerChips">
+            <button data-minutes="1">1 min</button>
+            <button data-minutes="5">5 min</button>
+            <button data-minutes="10">10 min</button>
+            <button data-minutes="30">30 min</button>
+          </div>
+          <div class="timerBar"><div id="timerFill"></div></div>
+          <div class="btnRow">
+            <button class="main" id="timerStart">Start</button>
+            <button id="timerReset">Reset</button>
+          </div>
+        </div>
+
+        <div class="tab" id="tabStopwatch">
+          <div id="swTime">00:00.00</div>
+          <div class="btnRow">
+            <button class="main" id="swStart">Start</button>
+            <button id="swReset">Reset</button>
+          </div>
+        </div>
+
+        <div class="tab" id="tabAlarm">
+          <div class="alarmLeft">
+            <div class="picker" id="picker">
+              <div class="col" data-f="hour"><button data-f="hour" data-d="1">▲</button><div id="alHour">7</div><button data-f="hour" data-d="-1">▼</button></div>
+              <div class="colon">:</div>
+              <div class="col" data-f="minute"><button data-f="minute" data-d="1">▲</button><div id="alMin">30</div><button data-f="minute" data-d="-1">▼</button></div>
+              <div class="col" data-f="ampm"><button data-f="ampm" data-d="1">▲</button><div id="alAmpm">AM</div><button data-f="ampm" data-d="-1">▼</button></div>
+            </div>
+            <button class="main" id="alarmAdd">Add alarm</button>
+          </div>
+          <div id="alarmList"></div>
+        </div>
+      </div>
+
+      <div class="page" id="pageCalendar">
+        <div class="dateTile">
+          <div><div id="tileMonth"></div><div id="tileYear"></div></div>
+          <div id="tileDay"></div>
+          <div id="tileWeekday"></div>
+        </div>
+        <div class="calMain">
+          <div class="calHead">
+            <button id="calPrev">‹</button>
+            <span id="calTitle"></span>
+            <button id="calNext">›</button>
+          </div>
+          <div class="week"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+          <div id="calWrap"></div>
+        </div>
+      </div>
+
+      <div class="page" id="pageWeather">
+        <div class="wLeft">
+          <div id="wCity">Loading weather...</div>
+          <div class="wMain"><span id="wIcon"></span><span id="wTemp"></span></div>
+          <div id="wText"></div>
+        </div>
+        <div class="wRight">
+          <div class="tile"><small>💨 Wind</small><b id="wWind">--</b></div>
+          <div class="tile"><small>🌡️ Feels like</small><b id="wFeels">--</b></div>
+          <div class="tile"><small>💧 Humidity</small><b id="wHumidity">--</b></div>
+        </div>
+      </div>
+
+      <div id="dots"></div>
+    </div>
+
+    </div><!-- end of clip -->
+    <!-- The two curves where the small island meets the top edge of the screen -->
+    <div class="ear left"></div>
+    <div class="ear right"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
